@@ -1,0 +1,56 @@
+body {
+    background-color: #0c2d05;
+}
+
+h1 {
+    text-align: center;
+    color: #d1dbcf;
+}
+
+.table {
+
+    border: 5px solid #7a8976;
+    background-color: #d1dbcf;
+
+}
+
+thead {
+    
+
+    border: 3px solid #0c2d05;
+}
+
+.form-control {
+    
+    margin-bottom: 10px;
+    background-color: rgb(209, 219, 207);
+    border: 2px solid #7a8976;
+
+}
+
+.form-control:focus {
+    outline: 0 !important;
+    margin-bottom: 10px;
+    background-color: #d1dbcf;
+    border: 2px solid #7a8976;
+   
+
+}
+
+.labels {
+
+    text-align: center;
+
+}
+
+.container {
+    
+    border: 5px solid #7a8976;
+    background-color: #d1dbcf;
+}
+
+.button {
+
+    margin: 15px auto 25px auto;
+
+}

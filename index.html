@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+
+<html lang="en-us">
+
+  <head>
+
+    <meta charset="UTF-8">
+    <title>Train Timer</title>
+    <link rel="stylesheet" href="reset.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.gstatic.com/firebasejs/4.12.0/firebase.js"></script>
+    <script src="https://cdn.jsdelivr.net/momentjs/2.12.0/moment.min.js"></script>
+
+</head>
+
+  <body>
+
+    <!-- Header -->
+    <Header>
+        <h1>Time to run the train!</h1>
+    </Header>
+
+    <!-- Table -->
+    <table class="table">
+        <thead>
+          <tr>
+            <th>Train Name</th>
+            <th>Destination</th>
+            <th>Frequency (min)</th>
+            <th>Next Arrival</th>
+            <th>Minutes Away</th>
+          </tr>
+        </thead>
+        <tbody id="body">
+          <tr>
+            <th>Helsinki Express</th>
+            <td>Helsinki</td>
+            <td>35</td>
+            <td>11:35 AM</td>
+            <td>22 minutes</td>
+          </tr>
+          <tr>
+            <th>Oslo Express</th>
+            <td>Oslo</td>
+            <td>13</td>
+            <td>11:35 PM</td>
+            <td>7 minutes</td>
+          </tr>
+          <tr>
+            <th>Nairobi Express</th>
+            <td>Nairobi</td>
+            <td>58</td>
+            <td>11:35 AM</td>
+            <td>41 minutes</td>
+          </tr>
+        </tbody>
+    </table>
+
+    <br>
+
+    <!-- form for submitting new trains -->
+    <form>
+        <div class="container">
+            <div class="row">
+                <div class="col">
+                    <div class="inputs">
+                       <p class="labels">Train Name</p>
+                       <input type="text" id="nameInput" class="form-control" placeholder="Hogwarts Express">
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="inputs">
+                        <p class="labels">Destination</p>
+                        <input type="text" id="destinationInput" class="form-control" placeholder="Hogwarts">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col">
+                    <div class="inputs">
+                        <p class="labels">First Train Time</p>                        
+                        <input type="text" id="frequencyInput" class="form-control" placeholder="11:35">
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="inputs">
+                        <p class="labels">Frequency (min)</p>
+                        <input type="text" id="minutes" class="form-control" placeholder="35 Minutes">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="button">
+                    <button  id="sendIt" type="submit" class="btn btn-outline-secondary">Submit</button>
+                </div>
+            </div>
+        </div>
+    </form>
+
+
+
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+    <script>
+
+        var config = {
+            apiKey: "AIzaSyBC3Jq84WL51tufgBx4eBJPzIzm4VAw6q4",
+            authDomain: "train-timer-89621.firebaseapp.com",
+            databaseURL: "https://train-timer-89621.firebaseio.com",
+            projectId: "train-timer-89621",
+            storageBucket: "train-timer-89621.appspot.com",
+            messagingSenderId: "1094476410833"
+        };
+
+        firebase.initializeApp(config);
+
+        var trainStorage = firebase.database();
+
+
+        // on click event that grabs values
+        $("#sendIt").on("click", function(){
+            var nameData = $("#nameInput").val().trim();
+            var destinationData = $("#destinationInput").val().trim();
+            var frequencyData = $("#frequencyInput").val().trim();
+            var minutesData = $("#minutes").val().trim();
+
+            var userTrain = {
+                name:nameData,
+                destination:destinationData,
+                firstTrain:frequencyData,
+                frequency:minutesData
+            };
+
+            trainStorage.ref().push(userTrain)
+            // console.log("New User Train has been added");
+        });
+
+
+        trainStorage.ref().on("child_added", function(snapshot) {
+            var newName= snapshot.val().name,
+                newDest= snapshot.val().destination,
+                newFirst= snapshot.val().firstTrain,
+                newFreq= snapshot.val().frequency;
+
+            var timeArr = newFirst.split(":");
+            var trainTime = moment()
+                .hours(timeArr[0])
+                .minutes(timeArr[1]);
+            var maxMoment = moment.max(moment(), trainTime);
+            var trainMinutes;
+            var trainArrival;
+
+            // If the first train is later than the current time, sent arrival to the first train time
+            if (maxMoment === trainTime) {
+                trainArrival = trainTime.format("hh:mm A");
+                trainMinutes = trainTime.diff(moment(), "minutes");
+            } else {
+                // Calculate the minutes until arrival using hardcore math
+                // To calculate the minutes till arrival, take the current time in unix subtract the FirstTrain time
+                // and find the modulus between the difference and the frequency.
+                var differenceTimes = moment().diff(trainTime, "minutes");
+                var trainRemainder = differenceTimes % newFreq;
+                trainMinutes = newFreq - trainRemainder;
+                // To calculate the arrival time, add the tMinutes to the current time
+                trainArrival = moment()
+                .add(trainMinutes, "m")
+                .format("hh:mm A");
+            }
+            console.log("tMinutes:", trainMinutes);
+            console.log("tArrival:", trainArrival);
+
+            // Add each train's data into the table
+            $("#body").append(
+                $("<tr>").append(
+                $("<td>").text(newName),
+                $("<td>").text(newDest),
+                $("<td>").text(newFreq),
+                $("<td>").text(trainArrival),
+                $("<td>").text(trainMinutes + " "+"minutes")
+                )
+            );    
+        });
+
+        
+
+            
+    
+    
+    
+    
+    </script>
+
+    
+  </body>
+
+</html>
